@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ИС САСТАНАК — Korisnici</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 24px; color: #222; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { font-size: 20px; margin: 0; }
+        a.logout { color: #2a5bd7; text-decoration: none; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-bottom: 28px; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #eef1f7; }
+        .card { background: white; padding: 20px; border-radius: 8px; max-width: 460px; }
+        input, select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        label { font-size: 13px; color: #555; }
+        button { padding: 10px 16px; background: #2a5bd7; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1f47ad; }
+        .badge { display: inline-block; background: #e8ecf7; color: #2a5bd7; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 4px; }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <h1>Administracija korisnika — auth-service</h1>
+    <a class="logout" th:href="@{/gui/logout}">Odjava</a>
+</div>
+
+<table>
+    <thead>
+    <tr><th>Ime i prezime</th><th>Korisničko ime</th><th>Org. jedinica</th><th>Stalna uloga</th><th>Email</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="u : ${users}">
+        <td th:text="${u.firstName + ' ' + u.lastName}"></td>
+        <td th:text="${u.username}"></td>
+        <td th:text="${u.organizationalUnitName}"></td>
+        <td><span class="badge" th:text="${u.primaryRole}"></span></td>
+        <td th:text="${u.email}"></td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="card">
+    <h2 style="font-size:16px;">Novi korisnik</h2>
+    <form th:action="@{/gui/users}" th:object="${newUser}" method="post">
+        <label>Ime</label>
+        <input type="text" th:field="*{firstName}" required />
+
+        <label>Ime oca</label>
+        <input type="text" th:field="*{fatherName}" required />
+
+        <label>Prezime</label>
+        <input type="text" th:field="*{lastName}" required />
+
+        <label>JMBG</label>
+        <input type="text" th:field="*{jmbg}" required maxlength="13" />
+
+        <label>Radno mesto</label>
+        <input type="text" th:field="*{jobTitle}" required />
+
+        <label>Mobilni telefon</label>
+        <input type="text" th:field="*{mobilePhone}" required />
+
+        <label>Poslovni telefon</label>
+        <input type="text" th:field="*{officePhone}" required />
+
+        <label>Email</label>
+        <input type="email" th:field="*{email}" required />
+
+        <label>Korisničko ime</label>
+        <input type="text" th:field="*{username}" required />
+
+        <label>Lozinka</label>
+        <input type="password" th:field="*{password}" required />
+
+        <label>Organizaciona jedinica</label>
+        <select th:field="*{organizationalUnitId}">
+            <option th:each="unit : ${units}" th:value="${unit.id}" th:text="${unit.name}"></option>
+        </select>
+
+        <label>Stalna uloga</label>
+        <select th:field="*{primaryRole}">
+            <option value="ADMINISTRATOR">ADMINISTRATOR</option>
+            <option value="RUKOVODILAC">RUKOVODILAC</option>
+            <option value="ZAPISNICAR">ZAPISNICAR</option>
+            <option value="UCESNIK" selected>UCESNIK</option>
+        </select>
+
+        <button type="submit">Kreiraj korisnika</button>
+    </form>
+</div>
+</body>
+</html>
