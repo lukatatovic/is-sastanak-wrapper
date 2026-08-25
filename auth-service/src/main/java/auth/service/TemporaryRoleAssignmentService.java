@@ -93,4 +93,10 @@ public class TemporaryRoleAssignmentService {
     public List<TemporaryRoleAssignmentDto> findByUser(Long userId) {
         return temporaryRoleAssignmentRepository.findByUserId(userId).stream().map(this::toDto).collect(Collectors.toList());
     }
+
+    @Transactional
+    public void revoke(Long id) {
+        TemporaryRoleAssigment assigment = temporaryRoleAssignmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Privremena uloga ne postoju"));
+        assigment.setRevoked(true);
+    }
 }

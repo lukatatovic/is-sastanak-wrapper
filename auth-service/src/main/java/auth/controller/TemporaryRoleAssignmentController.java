@@ -31,4 +31,11 @@ public class TemporaryRoleAssignmentController {
     public ResponseEntity<List<TemporaryRoleAssignmentDto>> findByUser(@PathVariable Long userId){
         return ResponseEntity.ok(temporaryRoleAssignmentService.findByUser(userId));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> revoke(@PathVariable Long id){
+        temporaryRoleAssignmentService.revoke(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
