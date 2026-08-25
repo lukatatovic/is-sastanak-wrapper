@@ -2,6 +2,7 @@ package auth.service;
 
 import auth.dto.UserCreateRequest;
 import auth.dto.UserDto;
+import auth.dto.UserInternalDto;
 import auth.exception.BusinessRuleException;
 import auth.exception.ResourceNotFoundReception;
 import auth.model.OrganizationalUnit;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +26,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final OrganizationalUnitRepository organizationalUnitRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryRoleAssignmentService temporaryRoleAssignmentService;
     @Transactional
     public UserDto createUser(UserCreateRequest request) {
         if(userRepository.existsByUsername(request.getUsername())){
@@ -77,5 +80,21 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         return userRepository.findAll().stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    //for meeting service later on
+    //contains all roles not just primery role in organisational unit
+    @Transactional(readOnly = true)
+    public UserInternalDto getInternal(Long id, Long meetingId, Long organizationalUnitIdContext){
+        User u = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Korisnik ne postoji"));
+
+        Set<String> effectiveRoles = temporaryRoleAssignmentService.effectiveRoles(id, meetingId, organizationalUnitIdContext);
+
+        return new UserInternalDto(u.getId(), u.getFirstName(), u.getLastName(),
+                u.getOrganizationalUnit() !=null ? u.getOrganizationalUnit().getId() :null,
+                u.getOrganizationalUnit() !=null ? u.getOrganizationalUnit().getName() :null,
+                u.getPrimaryRole().name(),
+                effectiveRoles
+                );
     }
 }
