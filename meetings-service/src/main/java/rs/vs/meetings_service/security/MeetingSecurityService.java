@@ -35,6 +35,18 @@ public class MeetingSecurityService {
 
     }
 
+    public boolean canManageMeeting(Authentication auth, Long meetingId){
+        Long userId = principalId(auth);
+        if(hasRole(auth,"ADMINISTRATOR")) return true;
+
+        Meeting meeting = meetingRepository.findById(meetingId).orElse(null);
+        if (meeting == null) return false;
+
+        if(meeting.getOrganizerId().equals(userId)) return true;
+
+        return hasAnyEffectiveRole(userId,meeting,"RUKOVODILAC");
+    }
+
     private boolean hasRole(Authentication auth, String role){
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }

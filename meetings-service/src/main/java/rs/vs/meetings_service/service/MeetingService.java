@@ -149,4 +149,20 @@ public class MeetingService {
     public Meeting getOrThrow(Long id){
         return meetingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Sastanak ne postoji"));
     }
+
+    @Transactional
+    public Meeting postponeOrCancel(Long meetingId, MeetingStatus newStatus, String reason){
+        if(newStatus != MeetingStatus.ODLOZEN && newStatus != MeetingStatus.OTKAZAN){
+            throw new BusinessRuleException("Status mora biti odlozen ili otkazan");
+        }
+
+        if(reason == null || reason.isBlank()){
+            throw new BusinessRuleException("Razlog promene statusa sastanka je obavezan");
+        }
+
+        Meeting meeting = getOrThrow(meetingId);
+        meeting.setStatus(newStatus);
+        meeting.setPostponeOrCancelReason(reason);
+        return meetingRepository.save(meeting);
+    }
 }
