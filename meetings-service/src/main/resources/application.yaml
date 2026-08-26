@@ -16,19 +16,18 @@ spring:
       ddl-auto: update
     open-in-view: false
 
-  app:
-    jwt:
-      secret: "cGxlYXNlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktcHJvZHVjdGlvbi1yZWFkeS0zMmI="
-      expiration-ms: 28800000
+app:
+  jwt:
+    secret: "cGxlYXNlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktcHJvZHVjdGlvbi1yZWFkeS0zMmI="
 
-    auth-service:
-      base-url: http://localhost:8081
-      internal-api-key: "internal-shared-key"
+  auth-service:
+    base-url: http://localhost:8081
+    internal-api-key: "internal-shared-key"
 
-    export-service:
-      base-url: http://localhost:8083
-      internal-api-key: "internal-shared-key"
+  export-service:
+    base-url: http://localhost:8083
+    internal-api-key: "internal-shared-key"
 
-  logging:
-    level:
-      rs.vs.auth: DEBUG
+logging:
+  level:
+    rs.vs.auth: DEBUG
