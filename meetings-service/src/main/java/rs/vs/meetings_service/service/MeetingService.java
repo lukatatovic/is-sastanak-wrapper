@@ -9,6 +9,7 @@ import rs.vs.meetings_service.client.AuthServiceClient;
 import rs.vs.meetings_service.client.UserInfoDto;
 import rs.vs.meetings_service.dto.*;
 import rs.vs.meetings_service.exception.BusinessRuleException;
+import rs.vs.meetings_service.exception.ResourceNotFoundReception;
 import rs.vs.meetings_service.model.*;
 import rs.vs.meetings_service.repository.MeetingRepository;
 
@@ -143,5 +144,9 @@ public class MeetingService {
 
     public Page<MeetingSummaryDto> findByOrganizationalUnit(Long orgUnitId, Pageable pageable) {
         return meetingRepository.findByOrganizationalUnitId(orgUnitId,pageable).map(this::toSummary);
+    }
+
+    public Meeting getOrThrow(Long id){
+        return meetingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Sastanak ne postoji"));
     }
 }

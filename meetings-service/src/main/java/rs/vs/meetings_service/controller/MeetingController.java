@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import rs.vs.meetings_service.dto.MeetingCreateRequest;
 import rs.vs.meetings_service.dto.MeetingDetailDto;
@@ -39,5 +40,12 @@ public class MeetingController {
     @GetMapping
     public ResponseEntity<Page<MeetingSummaryDto>> byOroUnit(@RequestParam Long orgUnitId, Pageable pageable){
         return ResponseEntity.ok(meetingService.findByOrganizationalUnit(orgUnitId,pageable));
+    }
+
+    @PreAuthorize("@meetingSecurityService.canViewMeeting(authentication, #id)")
+    @GetMapping("/{id}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<MeetingDetailDto> getOne(@PathVariable Long id){
+        return ResponseEntity.ok(meetingService.toDetailDto(meetingService.getOrThrow(id)));
     }
 }
