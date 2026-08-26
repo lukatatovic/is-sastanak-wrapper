@@ -140,4 +140,8 @@ public class MeetingService {
                 organizer.fullName(), organizer.getOrganizationalUnitName()
         );
     }
+
+    public Page<MeetingSummaryDto> findByOrganizationalUnit(Long orgUnitId, Pageable pageable) {
+        return meetingRepository.findByOrganizationalUnitId(orgUnitId,pageable).map(this::toSummary);
+    }
 }

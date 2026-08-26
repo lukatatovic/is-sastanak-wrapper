@@ -35,4 +35,9 @@ public class MeetingController {
         Long userId = ((AppUserPrincipal) auth.getPrincipal()).getId();
         return ResponseEntity.ok(meetingService.findVisibleToUser(userId,pageable));
     }
+
+    @GetMapping
+    public ResponseEntity<Page<MeetingSummaryDto>> byOroUnit(@RequestParam Long orgUnitId, Pageable pageable){
+        return ResponseEntity.ok(meetingService.findByOrganizationalUnit(orgUnitId,pageable));
+    }
 }

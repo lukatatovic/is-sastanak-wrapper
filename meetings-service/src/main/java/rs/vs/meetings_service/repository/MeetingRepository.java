@@ -16,4 +16,6 @@ public interface MeetingRepository extends JpaRepository<Meeting,Long> {
               or (p.userId = :userId)
            """)
     Page<Meeting> findAllVisibleToUser(@Param("userId") Long userId, Pageable pageable);
+
+    Page<Meeting> findByOrganizationalUnitId(Long orgUnitId, Pageable pageable);
 }
