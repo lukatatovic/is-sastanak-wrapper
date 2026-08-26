@@ -1,6 +1,8 @@
 package rs.vs.meetings_service.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.vs.meetings_service.client.AuthServiceClient;
@@ -123,6 +125,19 @@ public class MeetingService {
                 meeting.getId(), meeting.getTitle(), meeting.getCategory(), meeting.getType(), meeting.getFrequency(),
                 meeting.getLocationType(), meeting.getRoom(), meeting.getScheduledDate(), meeting.getScheduledTime(), meeting.getStatus(),
                 organizer.fullName(),recorder.fullName(), organizer.getOrganizationalUnitName(), items, participants
+        );
+    }
+
+    public Page<MeetingSummaryDto> findVisibleToUser(Long userId, Pageable pageable) {
+        return meetingRepository.findAllVisibleToUser(userId,pageable).map(this::toSummary);
+    }
+
+    private MeetingSummaryDto toSummary(Meeting meeting){
+        UserInfoDto organizer = authServiceClient.getUser(meeting.getOrganizerId());
+        return new MeetingSummaryDto(
+                meeting.getId(), meeting.getTitle(), meeting.getCategory(),
+                meeting.getStatus(), meeting.getScheduledDate(), meeting.getScheduledTime(),
+                organizer.fullName(), organizer.getOrganizationalUnitName()
         );
     }
 }

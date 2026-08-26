@@ -2,20 +2,18 @@ package rs.vs.meetings_service.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import rs.vs.meetings_service.dto.MeetingCreateRequest;
 import rs.vs.meetings_service.dto.MeetingDetailDto;
+import rs.vs.meetings_service.dto.MeetingSummaryDto;
 import rs.vs.meetings_service.model.Meeting;
 import rs.vs.meetings_service.security.AppUserPrincipal;
 import rs.vs.meetings_service.service.MeetingService;
-
-import java.awt.print.Pageable;
 
 @RestController
 @RequestMapping("/api/meetings")
@@ -30,5 +28,11 @@ public class MeetingController {
         Long organizerId = ((AppUserPrincipal) auth.getPrincipal()).getId();
         Meeting meeting = meetingService.createMeeting(organizerId,request);
         return ResponseEntity.ok(meetingService.toDetailDto(meeting));
+    }
+
+    @GetMapping("/mine")
+    public ResponseEntity<Page<MeetingSummaryDto>> myMeetings(Authentication auth, Pageable pageable){
+        Long userId = ((AppUserPrincipal) auth.getPrincipal()).getId();
+        return ResponseEntity.ok(meetingService.findVisibleToUser(userId,pageable));
     }
 }
