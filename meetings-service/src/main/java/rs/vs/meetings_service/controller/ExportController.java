@@ -26,6 +26,13 @@ public class ExportController {
         return fileResponse(content, "izvesaj-sastanak-" + meetingId + ".pdf",MediaType.APPLICATION_PDF);
     }
 
+    @PreAuthorize("@meetingSecurityService.canViewMeeting(authentication, #meetingId)")
+    @GetMapping("/xslx")
+    public ResponseEntity<byte[]> exportXslx(@PathVariable Long meetingId, @RequestParam(defaultValue = "false") boolean full){
+        MeetingReportDto report = full ? reportService.fullReport(meetingId) : reportService.shortReport(meetingId);
+        byte[] content = exportServiceClient.exportXslx(report);
+        return fileResponse(content, "izvesaj-sastanak-" + meetingId + ".xslx",MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    }
 
     private ResponseEntity<byte[]> fileResponse(byte[] content, String fileName, MediaType mediaType){
         return ResponseEntity.ok()

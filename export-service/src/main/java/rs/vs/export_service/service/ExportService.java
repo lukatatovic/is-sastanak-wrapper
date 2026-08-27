@@ -2,6 +2,10 @@ package rs.vs.export_service.service;
 
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import rs.vs.export_service.dto.AgendaItemReportDto;
 import rs.vs.export_service.dto.MeetingReportDto;
@@ -42,6 +46,32 @@ public class ExportService {
             return out.toByteArray();
         }catch (Exception ex){
             throw new RuntimeException("Greska pri generisanju PDF", ex);
+        }
+    }
+
+    public byte[] toXslx(MeetingReportDto report) {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()){
+            Sheet sheet =workbook.createSheet("Izvestaj");
+
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Redni broj");
+            header.createCell(1).setCellValue("Tacka dnevnog reda");
+            header.createCell(2).setCellValue("Zakljucak");
+
+            int rowIndex = 1;
+            for(AgendaItemReportDto item : report.getAgendaItems()){
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(item.getOrderNum());
+                row.createCell(1).setCellValue(item.getTitle());
+                row.createCell(2).setCellValue(item.getConclusion() != null ? item.getConclusion() : "");
+            }
+
+            for(int i = 0; i<3 ; i++) sheet.autoSizeColumn(i);
+
+            workbook.write(out);
+            return out.toByteArray();
+        }catch (Exception ex){
+            throw new RuntimeException("Greska pri generisanju XSLX", ex);
         }
     }
 }
