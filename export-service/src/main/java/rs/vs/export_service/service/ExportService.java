@@ -6,6 +6,9 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
 import rs.vs.export_service.dto.AgendaItemReportDto;
 import rs.vs.export_service.dto.MeetingReportDto;
@@ -73,5 +76,35 @@ public class ExportService {
         }catch (Exception ex){
             throw new RuntimeException("Greska pri generisanju XSLX", ex);
         }
+    }
+
+    public byte[] toDocx(MeetingReportDto report) {
+        try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()){
+            addParagraph(doc, "Izvestaj sa sastanka: " + report.getTitle(), true);
+            addParagraph(doc, "Datum: " + report.getScheduledDate() + " " + report.getScheduledTime(), false);
+            addParagraph(doc, "Rukovodilac: " + report.getOrganizerFullName(), false);
+            addParagraph(doc, "Zapisnicar: " + report.getRecorderFullName(), false);
+
+            for(AgendaItemReportDto item : report.getAgendaItems()){
+                addParagraph(doc, item.getOrderNum()+ " "+ item.getTitle(),true);
+                if(report.isFullReport() && item.getDescription() != null){
+                    addParagraph(doc,"Opis: " + item.getDescription(),false);
+                }
+                if(item.getConclusion() != null){
+                    addParagraph(doc,"Zakljucak: " + item.getConclusion(), false);
+                }
+            }
+            doc.write(out);
+            return out.toByteArray();
+        }catch (Exception ex){
+            throw new RuntimeException("Greska pri generisanju DOCX", ex);
+        }
+    }
+
+    private void addParagraph(XWPFDocument document, String text, boolean bold){
+        XWPFParagraph p = document.createParagraph();
+        XWPFRun run = p.createRun();
+        run.setBold(bold);
+        run.setText(text);
     }
 }

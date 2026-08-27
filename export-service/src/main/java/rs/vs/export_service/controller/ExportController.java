@@ -31,5 +31,11 @@ public class ExportController {
         return ResponseEntity.ok(exportService.toXslx(report));
     }
 
+    @PostMapping("/docx")
+    public  ResponseEntity<byte[]> docx(@RequestBody MeetingReportDto report, @RequestHeader(value = "X-Internal-Api-Key",required = false) String apiKey){
+        if(!authorized(apiKey)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return ResponseEntity.ok(exportService.toDocx(report));
+    }
+
     private boolean authorized(String apiKey){ return internalApiKey.equals(apiKey);}
 }

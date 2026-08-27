@@ -27,11 +27,19 @@ public class ExportController {
     }
 
     @PreAuthorize("@meetingSecurityService.canViewMeeting(authentication, #meetingId)")
-    @GetMapping("/xslx")
+    @GetMapping("/xlsx")
     public ResponseEntity<byte[]> exportXslx(@PathVariable Long meetingId, @RequestParam(defaultValue = "false") boolean full){
         MeetingReportDto report = full ? reportService.fullReport(meetingId) : reportService.shortReport(meetingId);
         byte[] content = exportServiceClient.exportXslx(report);
-        return fileResponse(content, "izvesaj-sastanak-" + meetingId + ".xslx",MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        return fileResponse(content, "izvesaj-sastanak-" + meetingId + ".xlsx",MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    }
+
+    @PreAuthorize("@meetingSecurityService.canViewMeeting(authentication, #meetingId)")
+    @GetMapping("/docx")
+    public ResponseEntity<byte[]> exportDocx(@PathVariable Long meetingId, @RequestParam(defaultValue = "false") boolean full){
+        MeetingReportDto report = full ? reportService.fullReport(meetingId) : reportService.shortReport(meetingId);
+        byte[] content = exportServiceClient.exportDocx(report);
+        return fileResponse(content, "izvesaj-sastanak-" + meetingId + ".docx",MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
     }
 
     private ResponseEntity<byte[]> fileResponse(byte[] content, String fileName, MediaType mediaType){

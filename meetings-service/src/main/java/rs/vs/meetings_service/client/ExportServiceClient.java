@@ -29,6 +29,10 @@ public class ExportServiceClient {
         return call("/api/export/xlsx",report);
     }
 
+    public byte[] exportDocx(MeetingReportDto report) {
+        return call("/api/export/docx",report);
+    }
+
     private byte[] call(String path, MeetingReportDto report){
         return webClient.post()
                 .uri(path)
@@ -38,6 +42,7 @@ public class ExportServiceClient {
                 .bodyToMono(byte[].class)
                 .block();
     }
+
 
 
 }
