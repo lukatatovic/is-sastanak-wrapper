@@ -30,4 +30,4 @@ app:
 
 logging:
   level:
-    rs.vs.auth: DEBUG
+    rs.vs.meetings-service: DEBUG

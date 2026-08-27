@@ -1,0 +1,17 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: export-service
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  internal-api-key: "internal-shared-key"
+
+logging:
+  level:
+    rs.vs.export_service: DEBUG

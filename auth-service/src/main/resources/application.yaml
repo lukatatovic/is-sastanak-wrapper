@@ -28,4 +28,4 @@ app:
 
 logging:
   level:
-    rs.vs.auth: DEBUG
+    auth: DEBUG
