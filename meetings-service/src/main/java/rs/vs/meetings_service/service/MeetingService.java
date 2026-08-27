@@ -12,8 +12,11 @@ import rs.vs.meetings_service.exception.BusinessRuleException;
 import rs.vs.meetings_service.exception.ResourceNotFoundReception;
 import rs.vs.meetings_service.model.*;
 import rs.vs.meetings_service.repository.MeetingRepository;
+import rs.vs.meetings_service.repository.ParticipantRepository;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +29,7 @@ public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final AuthServiceClient authServiceClient;
+    private final ParticipantRepository participantRepository;
 
     @Transactional
     public Meeting createMeeting(Long organizerId, MeetingCreateRequest request) {
@@ -164,5 +168,27 @@ public class MeetingService {
         meeting.setStatus(newStatus);
         meeting.setPostponeOrCancelReason(reason);
         return meetingRepository.save(meeting);
+    }
+
+    @Transactional
+    public void recordAttendance(Long meetingId, List<AttendanceUpdateRequest> updates) {
+        Meeting meeting = getOrThrow(meetingId);
+        long hoursSinceMeeting = Duration.between(
+                meeting.getScheduledDate().atTime(meeting.getScheduledTime()),
+                LocalDateTime.now()).toHours();
+
+        if(hoursSinceMeeting > 72){
+            throw new BusinessRuleException("Evidencija prisustva moguca je najvise 72 sata nakon sastanka");
+        }
+
+        for(AttendanceUpdateRequest u : updates){
+            Participant p = participantRepository.findById(u.getParticipantId()).orElseThrow(() -> new ResourceNotFoundReception("Ucesnik ne postoji"));
+
+            if(!p.getMeeting().getId().equals(meetingId)){
+                throw new BusinessRuleException("Ucesnik ne pripada ovom sastanku");
+            }
+            p.setActuallyAttended(u.isActuallyAttended());
+        }
+        meeting.setStatus(MeetingStatus.ODRZAN);
     }
 }
