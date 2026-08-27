@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import rs.vs.meetings_service.model.Meeting;
 
+import java.time.LocalDate;
+
 public interface MeetingRepository extends JpaRepository<Meeting,Long> {
     @Query("""
            select distinct m from Meeting m
@@ -18,4 +20,10 @@ public interface MeetingRepository extends JpaRepository<Meeting,Long> {
     Page<Meeting> findAllVisibleToUser(@Param("userId") Long userId, Pageable pageable);
 
     Page<Meeting> findByOrganizationalUnitId(Long orgUnitId, Pageable pageable);
+
+    @Query("select count(distinct m) from Meeting m " +
+            "left join m.participants p " +
+            "where (m.organizerId = :userId or m.recorderId = :userId or p.userId = :userId) " +
+            "and m.scheduledDate between :from and :to")
+    long countParticipationInRange(@Param("userId") Long userId,@Param("from") LocalDate from,@Param("to") LocalDate to);
 }
