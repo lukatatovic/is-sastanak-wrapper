@@ -36,6 +36,7 @@ export default function Sidebar() {
       <nav className="flex flex-1 flex-col gap-1">
         <NavLink
           to="/meetings"
+          end
           className={({ isActive }) =>
             `${linkBase} ${isActive ? linkActive : linkInactive}`
           }
