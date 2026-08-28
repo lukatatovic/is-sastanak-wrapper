@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
 import Seal from "./Seal";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   BarChart3,
   Building2,
@@ -23,16 +23,17 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-none flex-col border-r border-line bg-surface px-4 py-5">
-      <div className="mb-8 flex items-center gap-3 px-1">
-        <Seal />
-        <div>
-          <p className="font-display text-base leading-tight text-ink">
-            IS SASTANAK
-          </p>
-          <p className="text-xs text-ink-faint">informacioni sistem</p>
+      <Link to="/meetings">
+        <div className="mb-8 flex items-center gap-3 px-1">
+          <Seal />
+          <div>
+            <p className="font-display text-base leading-tight text-ink">
+              IS SASTANAK
+            </p>
+            <p className="text-xs text-ink-faint">informacioni sistem</p>
+          </div>
         </div>
-      </div>
-
+      </Link>
       <nav className="flex flex-1 flex-col gap-1">
         <NavLink
           to="/meetings"
