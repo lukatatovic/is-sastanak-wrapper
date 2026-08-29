@@ -53,11 +53,14 @@ public class TemporaryRoleAssignmentService {
     }
     @Transactional
     public TemporaryRoleAssignmentDto assign(Long adminId, TemporaryRoleAssignmentRequest request) {
+        boolean hasOrgUnit = request.getOrganizationalUnitId() != null;
 
         User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new ResourceNotFoundReception("Korisnik ne postoju"));
         User admin = userRepository.findById(adminId).orElseThrow(() -> new ResourceNotFoundReception("Administrator ne postoju"));
-        OrganizationalUnit ou = organizationalUnitRepository.findById(request.getOrganizationalUnitId()).orElseThrow(() -> new ResourceNotFoundReception("Organizaciona jedinica ne postoji"));
 
+        if(hasOrgUnit) {
+            OrganizationalUnit ou = organizationalUnitRepository.findById(request.getOrganizationalUnitId()).orElseThrow(() -> new ResourceNotFoundReception("Organizaciona jedinica ne postoji"));
+        }
         TemporaryRoleAssigment assigment = TemporaryRoleAssigment.builder()
                 .user(user)
                 .role(request.getRole())
