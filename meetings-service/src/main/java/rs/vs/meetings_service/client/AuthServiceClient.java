@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import rs.vs.meetings_service.exception.ResourceNotFoundReception;
 
+import java.util.Map;
+
 @Component
 public class AuthServiceClient {
 
@@ -35,6 +37,29 @@ public class AuthServiceClient {
                     .block();
         }catch (Exception e){
             throw new ResourceNotFoundReception("Korisnik ne postoji u auth-service");
+        }
+    }
+
+    public void assignTemporaryRole(Long userId, String role, Long meetingId, String note) {
+        try {
+            var requestBody = Map.of(
+                    "userId", userId,
+                    "role", role,
+                    "contextType", "meeting",
+                    "meetingId", meetingId,
+                    "organizationalUnitId", null,
+                    "note", note
+            );
+
+            webClient.post()
+                    .uri("/api/temporary-roles")
+                    .header("X-Internal-Api-Key", internalApiKey)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (Exception e) {
+            throw new RuntimeException("Nije moguće automatski dodeliti privremenu ulogu: " + e.getMessage());
         }
     }
 }

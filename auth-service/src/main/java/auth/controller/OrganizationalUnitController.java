@@ -1,5 +1,6 @@
 package auth.controller;
 
+import auth.exception.BusinessRuleException;
 import auth.model.OrganizationalUnit;
 import auth.repository.OrganizationalUnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,9 @@ public class OrganizationalUnitController {
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @PostMapping
     public ResponseEntity<OrganizationalUnit> create(@RequestBody OrganizationalUnit ou){
+        if(organizationalUnitRepository.existsByName(ou.getName())){
+            throw new BusinessRuleException("Vec postoji organizaciona jedinica sa datim imenom");
+        }
         return ResponseEntity.ok(organizationalUnitRepository.save(ou));
     }
 }

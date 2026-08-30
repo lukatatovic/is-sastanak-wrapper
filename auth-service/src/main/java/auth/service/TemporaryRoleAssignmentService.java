@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -61,16 +62,32 @@ public class TemporaryRoleAssignmentService {
         if(hasOrgUnit) {
             OrganizationalUnit ou = organizationalUnitRepository.findById(request.getOrganizationalUnitId()).orElseThrow(() -> new ResourceNotFoundReception("Organizaciona jedinica ne postoji"));
         }
-        TemporaryRoleAssigment assigment = TemporaryRoleAssigment.builder()
-                .user(user)
-                .role(request.getRole())
-                .meetingId(request.getMeetingId())
-                .organizationalUnitId(request.getOrganizationalUnitId())
-                .note(request.getNote())
-                .assignedByAdmin(admin)
-                .validUntil(request.getValidUntil())
-                .revoked(false)
-                .build();
+
+        Optional<TemporaryRoleAssigment> existingAssigment = request.getMeetingId() != null ? temporaryRoleAssignmentRepository.findByUserIdAndMeetingIdAndRevokedFalse(request.getUserId(), request.getMeetingId()) : Optional.empty();
+
+        TemporaryRoleAssigment assigment;
+
+        if(existingAssigment.isPresent()){
+            assigment = existingAssigment.get();
+
+            assigment.setRole(request.getRole());
+            assigment.setOrganizationalUnitId(request.getOrganizationalUnitId());
+            assigment.setNote(request.getNote());
+            assigment.setAssignedByAdmin(admin);
+            assigment.setValidUntil(request.getValidUntil());
+            assigment.setRevoked(false);
+        }else{
+            assigment = TemporaryRoleAssigment.builder()
+                    .user(user)
+                    .role(request.getRole())
+                    .meetingId(request.getMeetingId())
+                    .organizationalUnitId(request.getOrganizationalUnitId())
+                    .note(request.getNote())
+                    .assignedByAdmin(admin)
+                    .validUntil(request.getValidUntil())
+                    .revoked(false)
+                    .build();
+        }
 
         return toDto(temporaryRoleAssignmentRepository.save(assigment));
     }

@@ -3,6 +3,7 @@ package rs.vs.meetings_service.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import rs.vs.meetings_service.client.AuthServiceClient;
@@ -104,10 +105,18 @@ public class MeetingService {
             meeting.setParticipants(participants);
         }
 
-        return meetingRepository.save(meeting);
+        Meeting savedMeeting = meetingRepository.save(meeting);
+
+        if (recorder != null && !"ZAPISNICAR".equals(recorder.getPrimaryRole())) {
+            authServiceClient.assignTemporaryRole(recorder.getId(),"ZAPISNICAR", savedMeeting.getId(),"Automatski dodeljena uloga zapisnicara za sastanak #" + savedMeeting.getId()
+            );
+        }
+
+        return savedMeeting;
     }
 
     public MeetingDetailDto toDetailDto(Meeting meeting) {
+        updateExpiredMeetingStatus(meeting);
         UserInfoDto organizer = authServiceClient.getUser(meeting.getOrganizerId());
         UserInfoDto recorder = authServiceClient.getUser(meeting.getRecorderId());
 
@@ -129,7 +138,7 @@ public class MeetingService {
         return new MeetingDetailDto(
                 meeting.getId(), meeting.getTitle(), meeting.getCategory(), meeting.getType(), meeting.getFrequency(),
                 meeting.getLocationType(), meeting.getRoom(), meeting.getScheduledDate(), meeting.getScheduledTime(), meeting.getStatus(),
-                organizer.fullName(),recorder.fullName(), organizer.getOrganizationalUnitName(), items, participants
+                organizer.fullName(),recorder.fullName(), organizer.getOrganizationalUnitName(), items, participants, meeting.getFinalConclusion()
         );
     }
 
@@ -138,6 +147,7 @@ public class MeetingService {
     }
 
     private MeetingSummaryDto toSummary(Meeting meeting){
+        updateExpiredMeetingStatus(meeting);
         UserInfoDto organizer = authServiceClient.getUser(meeting.getOrganizerId());
         return new MeetingSummaryDto(
                 meeting.getId(), meeting.getTitle(), meeting.getCategory(),
@@ -173,6 +183,11 @@ public class MeetingService {
     @Transactional
     public void recordAttendance(Long meetingId, List<AttendanceUpdateRequest> updates) {
         Meeting meeting = getOrThrow(meetingId);
+
+        if(LocalDateTime.now().isBefore( meeting.getScheduledDate().atTime(meeting.getScheduledTime()))){
+            throw new BusinessRuleException("Evidencija prisustva nije moguca pre datuma i vremena odrzavanja sastanka");
+        }
+
         long hoursSinceMeeting = Duration.between(
                 meeting.getScheduledDate().atTime(meeting.getScheduledTime()),
                 LocalDateTime.now()).toHours();
@@ -190,5 +205,57 @@ public class MeetingService {
             p.setActuallyAttended(u.isActuallyAttended());
         }
         meeting.setStatus(MeetingStatus.ODRZAN);
+    }
+
+    private void updateExpiredMeetingStatus(Meeting meeting) {
+        if (meeting.getStatus() != MeetingStatus.ZAKAZAN) {
+            return;
+        }
+
+        LocalDateTime scheduledDateTime = meeting.getScheduledDate()
+                .atTime(meeting.getScheduledTime());
+
+        long hoursSinceMeeting = Duration.between(
+                scheduledDateTime,
+                LocalDateTime.now()
+        ).toHours();
+
+        if (hoursSinceMeeting > 72) {
+            meeting.setStatus(MeetingStatus.OTKAZAN);
+            meeting.setPostponeOrCancelReason("Nepoznat razlog");
+            meetingRepository.save(meeting);
+        }
+    }
+
+
+    public Meeting updateAgenda(Long id, MeetingAgendaUpdateRequest request) {
+        Meeting meeting = getOrThrow(id);
+
+        if(LocalDateTime.now().isBefore( meeting.getScheduledDate().atTime(meeting.getScheduledTime()))){
+            throw new BusinessRuleException("Promena stavki dnevnog reda i unosenje zakljucka nije moguca pre datuma i vremena odrzavanja sastanka");
+        }
+
+        long hoursSinceMeeting = Duration.between(
+                meeting.getScheduledDate().atTime(meeting.getScheduledTime()),
+                LocalDateTime.now()).toHours();
+
+        if(hoursSinceMeeting > 72){
+            throw new BusinessRuleException("Promena stavki dnevnog reda i unosenje zakljucka je moguca do 72 sata nakon zavrsetka sastanka");
+        }
+
+        meeting.setFinalConclusion(request.getFinalConclusion());
+
+        if(request.getAgendaItems() != null){
+            for(AgendaItemDetailDto ai : request.getAgendaItems()){
+                meeting.getAgendaItems().stream()
+                        .filter(item -> item.getId().equals(ai.getId()))
+                        .findFirst()
+                        .ifPresent(item -> item.setDescription(ai.getDescription()));
+            }
+        }
+
+        meeting.setStatus(MeetingStatus.ODRZAN);
+
+        return meetingRepository.save(meeting);
     }
 }

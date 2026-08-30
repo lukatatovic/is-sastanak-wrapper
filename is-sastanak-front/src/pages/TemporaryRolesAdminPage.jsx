@@ -6,7 +6,7 @@ import { Plus, X } from "lucide-react";
 import RoleBadge from "../components/ui/RoleBadge";
 import { formatDateTime } from "../utils/format";
 
-const ROLES = ["RUKOVODILAC", "ZAPISNICAR", "UCESNIK", "ADMINISTRATOR"];
+const ROLES = ["RUKOVODILAC", "ZAPISNICAR", "UCESNIK"];
 
 const emptyForm = {
   userId: "",
@@ -15,6 +15,7 @@ const emptyForm = {
   meetingId: "",
   organizationalUnitId: "",
   note: "",
+  validUntil: "",
 };
 
 export default function TemporaryRolesAdminPage() {
@@ -25,6 +26,7 @@ export default function TemporaryRolesAdminPage() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -53,9 +55,36 @@ export default function TemporaryRolesAdminPage() {
     loadAssignments(selectedUserId);
   }, [selectedUserId]);
 
+  const validate = () => {
+    let errors = {};
+
+    if (!form.userId) errors.userId = "Morate da izaberete korisnika";
+
+    if (!form.note.trim()) {
+      errors.note = "Razlog dodeljivanja uloge je obavezan";
+    }
+
+    if (form.contextType === "org") {
+      if (!form.validUntil) {
+        errors.validUntil("Morate izabrati vreme do kada vazi uloga");
+      } else {
+        const selectedDate = new Date(form.validUntil);
+        const now = new Date();
+        if (selectedDate <= now) {
+          errors.validUntil = "Vreme do kada vazi uloga mora biti u buducnosti";
+        }
+      }
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!validate()) {
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -70,6 +99,7 @@ export default function TemporaryRolesAdminPage() {
       console.log(payload);
       await authClient.post("/api/temporary-roles", payload);
       setForm({ ...emptyForm, userId: form.userId });
+      setFormErrors({});
       loadAssignments(form.userId);
       setSelectedUserId(form.userId);
     } catch (err) {
@@ -121,6 +151,11 @@ export default function TemporaryRolesAdminPage() {
                   </option>
                 ))}
               </select>
+              {formErrors.userId && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.userId}
+                </span>
+              )}
             </div>
             <div>
               <label className="label">Privremena uloga</label>
@@ -180,26 +215,48 @@ export default function TemporaryRolesAdminPage() {
               />
             </div>
           ) : (
-            <div>
-              <label className="label">Organizaciona jedinica</label>
-              <select
-                className="input"
-                required
-                value={form.organizationalUnitId}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    organizationalUnitId: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Izaberite jedinicu...</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-4">
+              <div>
+                <label className="label">Organizaciona jedinica</label>
+                <select
+                  className="input"
+                  required
+                  value={form.organizationalUnitId}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      organizationalUnitId: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Izaberite jedinicu...</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Vazi do</label>
+                <input
+                  type="datetime-local"
+                  className="input"
+                  required
+                  value={form.validUntil}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      validUntil: e.target.value,
+                    }))
+                  }
+                />
+                {formErrors.validUntil && (
+                  <span className="text-xs text-red-500 mt-1">
+                    {formErrors.validUntil}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -212,6 +269,11 @@ export default function TemporaryRolesAdminPage() {
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
+            {formErrors.note && (
+              <span className="text-xs text-red-500 mt-1">
+                {formErrors.note}
+              </span>
+            )}
           </div>
 
           <button type="submit" className="btn-primary" disabled={submitting}>

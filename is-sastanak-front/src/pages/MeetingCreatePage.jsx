@@ -25,6 +25,7 @@ export default function MeetingCreatePage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
@@ -37,6 +38,9 @@ export default function MeetingCreatePage() {
     scheduledDate: minDateForScheduling(),
     scheduledTime: "10:00",
     recorderId: "",
+    actNumber: "",
+    actDate: "",
+    actIssuingOrganization: "",
   });
 
   const [agendaItems, setAgendaItems] = useState([emptyAgendaItem()]);
@@ -63,15 +67,101 @@ export default function MeetingCreatePage() {
     );
   };
 
+  const validate = () => {
+    let errors = {};
+
+    if (!form.title.trim()) {
+      errors.title = "Tema sastanka je obavezna";
+    }
+
+    if (!form.room.trim()) {
+      errors.room = "Prostorija je obavezna";
+    }
+
+    if (!form.recorderId) {
+      errors.recorderId = "Morate izabrati zapisnicara";
+    }
+
+    if (form.recorderId) {
+      const isRecorderInParticipants = participants.some(
+        (p) => Number(p.userId) === Number(form.recorderId),
+      );
+      if (isRecorderInParticipants) {
+        errors.participants =
+          "Zapisnicar ne može biti i u listi ucesnika na sastanku.";
+      }
+    }
+
+    if (form.type === "STALNI" && !form.frequency) {
+      errors.frequency = "Ucestalost je obavezna za stalne sastanke.";
+    }
+
+    const hasActNumber = form.actNumber.trim() !== "";
+    const hasActDate = form.actDate && form.actDate.trim() !== "";
+    const hasActOrganization = form.actIssuingOrganization.trim() !== "";
+
+    if (
+      (hasActNumber || hasActDate || hasActOrganization) &&
+      !(hasActNumber && hasActDate && hasActOrganization)
+    ) {
+      if (!hasActNumber)
+        errors.actNumber = "Broj akta je obavezum ako se unosi akt";
+      if (!hasActDate)
+        errors.actDate = "Datum akta je obavezan ako se unosi akt";
+      if (!hasActOrganization)
+        errors.actIssuingOrganization =
+          "Organizacija je obavezna ako se unosi akt";
+
+      errors.actGroup =
+        "Ako unosite podatke o aktu, morate popuniti sva tri polja (broj, datum i organizaciju).";
+    }
+
+    const validAgenda = agendaItems.filter((a) => a.title.trim() !== "");
+    if (validAgenda.length === 0) {
+      errors.agenda = "Sastanak mora imati bar 1 stavku dnevnog reda.";
+    } else {
+      const titles = validAgenda.map((a) => a.title.trim().toLowerCase());
+      const hasDuplicateAgenda = new Set(titles).size !== titles.length;
+      if (hasDuplicateAgenda) {
+        errors.agenda = "Stavke dnevnog reda ne smeju imati iste nazive";
+      }
+    }
+
+    const validParticipants = participants.filter(
+      (p) => p.userId || p.externalFirstName.trim() !== "",
+    );
+    if (validParticipants.length < 2) {
+      errors.participants = "Sastanak mora imati bar 2 ucesnika.";
+    } else {
+      const userIds = validParticipants
+        .filter((p) => p.userId)
+        .map((p) => p.userId);
+      const hasDuplicateUsers = new Set(userIds).size !== userIds.length;
+
+      if (hasDuplicateUsers) {
+        errors.participants = "Isti ucesnik ne moze biti dodat vise puta.";
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!validate()) {
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
         ...form,
         recorderId: Number(form.recorderId),
         frequency: form.type === "STALNI" ? form.frequency : null,
+        actDate: form.actDate ? form.actDate : null,
         agendaItems: agendaItems.filter((a) => a.title.trim() !== ""),
         participants: participants
           .filter((p) => p.userId || p.externalFirstName)
@@ -103,6 +193,11 @@ export default function MeetingCreatePage() {
               value={form.title}
               onChange={(e) => update("title", e.target.value)}
             />
+            {formErrors.title && (
+              <span className="text-xs text-red-500 mt-1">
+                {formErrors.title}
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -149,6 +244,11 @@ export default function MeetingCreatePage() {
                   </option>
                 ))}
               </select>
+              {formErrors.frequency && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.frequency}
+                </span>
+              )}
             </div>
           )}
 
@@ -202,29 +302,87 @@ export default function MeetingCreatePage() {
                 onChange={(e) => update("room", e.target.value)}
                 placeholder="Kancelarija 73"
               />
+              {formErrors.room && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.room}
+                </span>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="label">Zapisnicar</label>
-            <select
-              className="input"
-              required
-              value={form.recorderId}
-              onChange={(e) => update("recorderId", e.target.value)}
-            >
-              <option value="">Izaberite zapisnicara...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.firstName} {u.lastName} ({u.username})
-                </option>
-              ))}
-            </select>
-            {users.length === 0 && (
-              <p className="mt-1 text-xs text-ink-faint">
-                Lista korisnika nije dostupna
-              </p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Zapisnicar</label>
+              <select
+                className="input"
+                required
+                value={form.recorderId}
+                onChange={(e) => update("recorderId", e.target.value)}
+              >
+                <option value="">Izaberite zapisnicara...</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName} ({u.username})
+                  </option>
+                ))}
+              </select>
+              {formErrors.recorderId && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.recorderId}
+                </span>
+              )}
+              {users.length === 0 && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  Lista korisnika nije dostupna
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="label">Organizacija koja je donela akt</label>
+              <input
+                className="input"
+                value={form.actIssuingOrganization}
+                onChange={(e) =>
+                  update("actIssuingOrganization", e.target.value)
+                }
+              />
+              {formErrors.actGroup && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.actGroup}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Datum donosenja akta</label>
+              <input
+                type="date"
+                className="input"
+                max={new Date().toISOString().split("T")[0]}
+                value={form.actDate}
+                onChange={(e) => update("actDate", e.target.value)}
+              />
+              {formErrors.actGroup && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.actGroup}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="label">Broj akta</label>
+              <input
+                className="input"
+                value={form.actNumber}
+                onChange={(e) => update("actNumber", e.target.value)}
+              />
+              {formErrors.actGroup && (
+                <span className="text-xs text-red-500 mt-1">
+                  {formErrors.actGroup}
+                </span>
+              )}
+            </div>
           </div>
         </section>
 
@@ -239,7 +397,11 @@ export default function MeetingCreatePage() {
               <Plus size={16} /> Dodaj tacku
             </button>
           </div>
-
+          {formErrors.agenda && (
+            <span className="text-xs text-red-500 mt-1">
+              {formErrors.agenda}
+            </span>
+          )}
           <div className="space-y-3">
             {agendaItems.map((item, idx) => (
               <div
@@ -262,6 +424,7 @@ export default function MeetingCreatePage() {
                     className="input"
                     placeholder="Opis"
                     rows={2}
+                    hidden
                     value={item.description}
                     onChange={(e) =>
                       updateAgendaItem(idx, "description", e.target.value)
@@ -293,7 +456,11 @@ export default function MeetingCreatePage() {
               <Plus size={16} /> Dodaj ucesnika
             </button>
           </div>
-
+          {formErrors.participants && (
+            <span className="text-xs text-red-500 mt-1">
+              {formErrors.participants}
+            </span>
+          )}
           <div className="space-y-4">
             {participants.map((p, idx) => (
               <div

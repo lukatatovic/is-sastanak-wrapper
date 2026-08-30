@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rs.vs.meetings_service.dto.MeetingAgendaUpdateRequest;
 import rs.vs.meetings_service.dto.MeetingCreateRequest;
 import rs.vs.meetings_service.dto.MeetingDetailDto;
 import rs.vs.meetings_service.dto.MeetingSummaryDto;
@@ -59,5 +60,12 @@ public class MeetingController {
         MeetingStatus status = MeetingStatus.valueOf(body.get("status"));
         Meeting meeting = meetingService.postponeOrCancel(id,status,body.get("reason"));
         return ResponseEntity.ok(meetingService.toDetailDto(meeting));
+    }
+
+    @PreAuthorize("hasAnyRole('RUKOVODILAC','ADMINISTRATOR','ZAPISNICAR')")
+    @PatchMapping("/{id}/agenda")
+    @Transactional
+    public ResponseEntity<MeetingDetailDto> updateAgenda(@PathVariable Long id, @RequestBody MeetingAgendaUpdateRequest request){
+        return ResponseEntity.ok(meetingService.toDetailDto(meetingService.updateAgenda(id,request)));
     }
 }

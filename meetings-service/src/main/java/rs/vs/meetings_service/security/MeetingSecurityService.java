@@ -3,6 +3,7 @@ package rs.vs.meetings_service.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import rs.vs.meetings_service.client.AuthServiceClient;
 import rs.vs.meetings_service.model.Meeting;
 import rs.vs.meetings_service.repository.MeetingRepository;
@@ -16,6 +17,7 @@ public class MeetingSecurityService {
 
     public boolean isAdmin(Authentication auth) { return  hasRole(auth,"ADMINISTRATOR");}
 
+    @Transactional(readOnly = true)
     public boolean canViewMeeting(Authentication auth, Long meetingId){
         Long userId = principalId(auth);
         if(hasRole(auth,"ADMINISTRATOR")) return true;

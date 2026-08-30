@@ -27,6 +27,7 @@ export default function UsersAdminPage() {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,9 +53,67 @@ export default function UsersAdminPage() {
 
   useEffect(load, []);
 
+  const validate = () => {
+    let errors = {};
+
+    if (!form.firstName.trim()) errors.firstName = "Ime je obavezno";
+    if (!form.lastName.trim()) errors.lastName = "Prezime je obavezno";
+
+    if (!form.jmbg.trim()) {
+      errors.jmbg = "JMBG je obavezan";
+    } else if (!/^\d{13}$/.test(form.jmbg)) {
+      errors.jmbg = "JMBG mora imati tacno 13 cifara";
+    }
+
+    if (!form.email.trim()) {
+      errors.email = "Email je obavezan.";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = "Nevalidan format email adrese";
+    }
+
+    if (!form.username.trim()) errors.username = "Korisnicko ime je obavezno";
+
+    if (!form.password.trim()) {
+      errors.password = "Lozinka je obavezna";
+    }
+
+    if (!form.fatherName.trim()) errors.fatherName = "Ime oca je obavezno";
+
+    if (!form.jobTitle.trim()) errors.jobTitle = "Naziv pozicije je obavezan";
+
+    const phoneRegex = /^(\+381|0)\d{8,9}$/;
+
+    if (!form.officePhone.trim()) {
+      errors.mobilePhone = "Poslovni telefon je obavezan";
+    } else if (
+      form.officePhone &&
+      !phoneRegex.test(form.officePhone.replace(/[\s-]/g, ""))
+    ) {
+      errors.officePhone = "Format mora biti +381... ili 06...";
+    }
+
+    if (!form.mobilePhone.trim()) {
+      errors.mobilePhone = "Mobilni telefon je obavezan";
+    } else if (!phoneRegex.test(form.mobilePhone.replace(/[\s-]/g, ""))) {
+      errors.mobilePhone = "Format mora biti +381... ili 06...";
+    }
+
+    if (!form.organizationalUnitId) {
+      errors.organizationalUnitId = "Izaberite organizacionu jedinicu";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!validate()) {
+      return;
+    }
+
     setSubmitting(true);
     try {
       await authClient.post("/api/users", {
@@ -62,6 +121,7 @@ export default function UsersAdminPage() {
         organizationalUnitId: Number(form.organizationalUnitId) || null,
       });
       setForm(emptyForm);
+      setFormErrors({});
       load();
     } catch (err) {
       setError(
@@ -113,6 +173,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, firstName: e.target.value }))
                 }
               />
+              {formErrors.firstName && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.firstName}
+                </span>
+              )}
             </div>
             <div>
               <label className="label">Prezime</label>
@@ -124,6 +189,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, lastName: e.target.value }))
                 }
               />
+              {formErrors.lastName && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.lastName}
+                </span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -136,6 +206,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, fatherName: e.target.value }))
                 }
               />
+              {formErrors.fatherName && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.fatherName}
+                </span>
+              )}
             </div>
             <div>
               <label className="label">Naziv pozicije</label>
@@ -147,6 +222,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, jobTitle: e.target.value }))
                 }
               />
+              {formErrors.jobTitle && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.jobTitle}
+                </span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -160,6 +240,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, jmbg: e.target.value }))
                 }
               />
+              {formErrors.jmbg && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.jmbg}
+                </span>
+              )}
             </div>
             <div>
               <label className="label">Email</label>
@@ -171,6 +256,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, email: e.target.value }))
                 }
               />
+              {formErrors.email && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.email}
+                </span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -184,6 +274,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, username: e.target.value }))
                 }
               />
+              {formErrors.username && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.username}
+                </span>
+              )}
             </div>
 
             <div>
@@ -196,6 +291,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, password: e.target.value }))
                 }
               />
+              {formErrors.password && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.password}
+                </span>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -208,6 +308,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, officePhone: e.target.value }))
                 }
               />
+              {formErrors.officePhone && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.officePhone}
+                </span>
+              )}
             </div>
             <div>
               <label className="label">Mobilni telefon</label>
@@ -219,6 +324,11 @@ export default function UsersAdminPage() {
                   setForm((f) => ({ ...f, mobilePhone: e.target.value }))
                 }
               />
+              {formErrors.mobilePhone && (
+                <span style={{ color: "red", fontSize: "12px" }}>
+                  {formErrors.mobilePhone}
+                </span>
+              )}
             </div>
           </div>
           <div>
@@ -239,6 +349,11 @@ export default function UsersAdminPage() {
                 </option>
               ))}
             </select>
+            {formErrors.organizationalUnitId && (
+              <span style={{ color: "red", fontSize: "12px" }}>
+                {formErrors.organizationalUnitId}
+              </span>
+            )}
           </div>
           <div>
             <label className="label">Stalna uloga</label>

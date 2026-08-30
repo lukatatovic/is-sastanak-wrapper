@@ -41,4 +41,6 @@ public class MeetingDetailDto {
     private List<AgendaItemDetailDto> agendaItems;
 
     private List<ParticipantDetailDto> participants;
+
+    private String finalConclusion;
 }
