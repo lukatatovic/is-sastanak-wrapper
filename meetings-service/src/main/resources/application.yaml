@@ -6,10 +6,10 @@ spring:
     name: meetings-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/meetings_db
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:meetings_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password:
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
 
   jpa:
     hibernate:
@@ -21,11 +21,11 @@ app:
     secret: "cGxlYXNlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktcHJvZHVjdGlvbi1yZWFkeS0zMmI="
 
   auth-service:
-    base-url: http://localhost:8081
+    base-url: ${AUTH_SERVICE_URL:http://localhost:8081}
     internal-api-key: "internal-shared-key"
 
   export-service:
-    base-url: http://localhost:8083
+    base-url: ${EXPORT_SERVICE_URL:http://localhost:8083}
     internal-api-key: "internal-shared-key"
 
 logging:
