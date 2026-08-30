@@ -11,7 +11,7 @@ export default function Pagination({ page, totalPages, onChange }) {
         Prethodna
       </button>
       <span className="text-ink-soft">
-        Strana {page + 1} od {totalPages}
+        Strana {page + 1} od {Math.max(totalPages, 1)}
       </span>
       <button
         className="btn-secondary px-3 py-1.5"
