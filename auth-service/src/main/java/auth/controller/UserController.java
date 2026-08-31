@@ -24,7 +24,7 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(request));
     }
 
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR','RUKOVODILAC')")
     @GetMapping
     public ResponseEntity<List<UserDto>> findAll(){return ResponseEntity.ok(userService.findAll());}
 }

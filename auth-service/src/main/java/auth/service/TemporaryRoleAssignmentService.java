@@ -1,5 +1,6 @@
 package auth.service;
 
+import auth.client.MeetingsServiceClient;
 import auth.dto.TemporaryRoleAssignmentDto;
 import auth.dto.TemporaryRoleAssignmentRequest;
 import auth.exception.ResourceNotFoundReception;
@@ -26,6 +27,7 @@ public class TemporaryRoleAssignmentService {
     private final TemporaryRoleAssignmentRepository temporaryRoleAssignmentRepository;
     private final UserRepository userRepository;
     private final OrganizationalUnitRepository organizationalUnitRepository;
+    private final MeetingsServiceClient meetingsServiceClient;
     public Set<String> effectiveRoles(Long id, Long meetingId, Long organizationalUnitId) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Korisnik ne postoji"));
 
@@ -58,9 +60,10 @@ public class TemporaryRoleAssignmentService {
 
         User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new ResourceNotFoundReception("Korisnik ne postoju"));
         User admin = userRepository.findById(adminId).orElseThrow(() -> new ResourceNotFoundReception("Administrator ne postoju"));
-
+        String ouName = "";
         if(hasOrgUnit) {
             OrganizationalUnit ou = organizationalUnitRepository.findById(request.getOrganizationalUnitId()).orElseThrow(() -> new ResourceNotFoundReception("Organizaciona jedinica ne postoji"));
+            ouName = ou.getName();
         }
 
         Optional<TemporaryRoleAssigment> existingAssigment = request.getMeetingId() != null ? temporaryRoleAssignmentRepository.findByUserIdAndMeetingIdAndRevokedFalse(request.getUserId(), request.getMeetingId()) : Optional.empty();
@@ -89,10 +92,21 @@ public class TemporaryRoleAssignmentService {
                     .build();
         }
 
+        if(hasOrgUnit) {
+            meetingsServiceClient.notify(user.getId(), "Dodeljena vam je privremena uloga " + request.getRole() + " za organizacionu jedinicu: "+ ouName +", " + request.getNote(), "INFO");
+        }
+        if(existingAssigment.isPresent() && request.getMeetingId() != null){
+            meetingsServiceClient.notify(user.getId(), "Dodeljena vam je privremena uloga " + request.getRole() + " za sastanak: "+ request.getMeetingId() +", " + request.getNote(), "INFP");
+        }
         return toDto(temporaryRoleAssignmentRepository.save(assigment));
     }
 
     private TemporaryRoleAssignmentDto toDto(TemporaryRoleAssigment a) {
+        String adminName = null;
+        if(a.getAssignedByAdmin() != null){
+            adminName = a.getAssignedByAdmin().getFirstName()+" "+a.getAssignedByAdmin().getLastName();
+        }
+
         return new TemporaryRoleAssignmentDto(
                 a.getId(),
                 a.getUser().getId(),
@@ -101,7 +115,7 @@ public class TemporaryRoleAssignmentService {
                 a.getMeetingId(),
                 a.getOrganizationalUnitId(),
                 a.getNote(),
-                a.getAssignedByAdmin().getFirstName()+" "+a.getAssignedByAdmin().getLastName(),
+                adminName,
                 a.getAssignedAt(),
                 a.getValidUntil(),
                 a.isRevoked(),
@@ -118,5 +132,46 @@ public class TemporaryRoleAssignmentService {
     public void revoke(Long id) {
         TemporaryRoleAssigment assigment = temporaryRoleAssignmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundReception("Privremena uloga ne postoju"));
         assigment.setRevoked(true);
+    }
+
+    public void assignInternal(TemporaryRoleAssignmentRequest request) {
+        boolean hasOrgUnit = request.getOrganizationalUnitId() != null;
+
+        User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new ResourceNotFoundReception("Korisnik ne postoju"));
+
+        if(hasOrgUnit) {
+            OrganizationalUnit ou = organizationalUnitRepository.findById(request.getOrganizationalUnitId()).orElseThrow(() -> new ResourceNotFoundReception("Organizaciona jedinica ne postoji"));
+        }
+
+        Optional<TemporaryRoleAssigment> existingAssigment = request.getMeetingId() != null ? temporaryRoleAssignmentRepository.findByUserIdAndMeetingIdAndRevokedFalse(request.getUserId(), request.getMeetingId()) : Optional.empty();
+
+        TemporaryRoleAssigment assigment;
+
+        if(existingAssigment.isPresent()){
+            assigment = existingAssigment.get();
+            assigment.setRole(request.getRole());
+            assigment.setOrganizationalUnitId(request.getOrganizationalUnitId());
+            assigment.setNote(request.getNote());
+            assigment.setValidUntil(request.getValidUntil());
+            assigment.setRevoked(false);
+        }else{
+            assigment = TemporaryRoleAssigment.builder()
+                    .user(user)
+                    .role(request.getRole())
+                    .meetingId(request.getMeetingId())
+                    .organizationalUnitId(request.getOrganizationalUnitId())
+                    .note(request.getNote())
+                    .validUntil(request.getValidUntil())
+                    .revoked(false)
+                    .build();
+        }
+
+        temporaryRoleAssignmentRepository.save(assigment);
+
+        if(existingAssigment.isPresent() && request.getMeetingId() != null){
+            meetingsServiceClient.notify(user.getId(), "Dodeljena vam je privremena uloga " + request.getRole() + " za sastanak: "+ request.getMeetingId() +", " + request.getNote(), "INFP");
+        }
+
+        return;
     }
 }

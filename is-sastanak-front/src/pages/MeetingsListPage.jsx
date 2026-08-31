@@ -8,11 +8,17 @@ import { CATEGORY_LABELS } from "../utils/labels";
 import StatusBadge from "../components/ui/StatusBadge";
 import Pagination from "../components/ui/Pagination";
 import { formatDate, formatTime } from "../utils/format";
+import { useAuth } from "../context/AuthContext";
 
 export default function MeetingsListPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const { user } = useAuth();
+
+  const isAdminOrRukovodilac = user?.roles?.some((role) =>
+    ["ADMINISTRATOR", "RUKOVODILAC"].includes(role),
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -30,7 +36,11 @@ export default function MeetingsListPage() {
         <div>
           <h1 className="font-display text-2xl text-ink">Moji sastanci</h1>
         </div>
-        <Link to="/meetings/new" className="btn-primary">
+        <Link
+          to="/meetings/new"
+          className="btn-primary"
+          hidden={!isAdminOrRukovodilac}
+        >
           Novi sastanak
         </Link>
       </div>

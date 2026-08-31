@@ -24,6 +24,9 @@ app:
     secret: "cGxlYXNlLWNoYW5nZS10aGlzLXNlY3JldC1rZXktcHJvZHVjdGlvbi1yZWFkeS0zMmI="
     expiration-ms: 28800000
 
+  meetings-service:
+    base-url: ${MEETINGS_SERVICE_URL:http://localhost:8082}
+
   internal-api-key: "internal-shared-key"
 
 logging:

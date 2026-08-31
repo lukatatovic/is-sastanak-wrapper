@@ -34,7 +34,7 @@ public class TemporaryRoleAssigment {
     private String note;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id", nullable = false)
+    @JoinColumn(name = "assigned_by_admin_id")
     private User assignedByAdmin;
 
     @Column(nullable = false, updatable = false)

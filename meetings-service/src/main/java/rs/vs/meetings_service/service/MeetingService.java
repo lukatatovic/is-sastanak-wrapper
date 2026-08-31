@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +32,7 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final AuthServiceClient authServiceClient;
     private final ParticipantRepository participantRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Meeting createMeeting(Long organizerId, MeetingCreateRequest request) {
@@ -112,6 +114,15 @@ public class MeetingService {
             );
         }
 
+        List<Long> recipientIds = savedMeeting.getParticipants().stream()
+                .map(Participant::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        recipientIds.add(savedMeeting.getRecorderId());
+
+        notificationService.notifyMany(recipientIds,"Pozvani ste na sastanak: " +savedMeeting.getTitle()+ " (" + savedMeeting.getScheduledDate() +" )", "INFO", savedMeeting.getId());
+
         return savedMeeting;
     }
 
@@ -177,6 +188,16 @@ public class MeetingService {
         Meeting meeting = getOrThrow(meetingId);
         meeting.setStatus(newStatus);
         meeting.setPostponeOrCancelReason(reason);
+
+        List<Long> recipientIds = meeting.getParticipants().stream()
+                .map(Participant::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        recipientIds.add(meeting.getRecorderId());
+
+        notificationService.notifyMany(recipientIds,"Sastanak '" + meeting.getTitle() + "' je " +(newStatus == MeetingStatus.ODLOZEN ? "odložen" : "otkazan") + ": " + reason ,"WARNING", meeting.getId());
+
         return meetingRepository.save(meeting);
     }
 
@@ -196,6 +217,8 @@ public class MeetingService {
             throw new BusinessRuleException("Evidencija prisustva moguca je najvise 72 sata nakon sastanka");
         }
 
+        List<Long> attendedUserIds = new ArrayList<>();
+
         for(AttendanceUpdateRequest u : updates){
             Participant p = participantRepository.findById(u.getParticipantId()).orElseThrow(() -> new ResourceNotFoundReception("Ucesnik ne postoji"));
 
@@ -203,8 +226,13 @@ public class MeetingService {
                 throw new BusinessRuleException("Ucesnik ne pripada ovom sastanku");
             }
             p.setActuallyAttended(u.isActuallyAttended());
+            if(p.isActuallyAttended()) {
+                attendedUserIds.add(p.getUserId());
+            }
         }
         meeting.setStatus(MeetingStatus.ODRZAN);
+
+        notificationService.notifyMany(attendedUserIds,"Vase prisustvo na sastanku '" + meeting.getTitle() + "' je evidentirano.","SUCCESS", meeting.getId());
     }
 
     private void updateExpiredMeetingStatus(Meeting meeting) {

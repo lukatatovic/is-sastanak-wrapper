@@ -47,19 +47,18 @@ public class AuthServiceClient {
                     "role", role,
                     "contextType", "meeting",
                     "meetingId", meetingId,
-                    "organizationalUnitId", null,
                     "note", note
             );
 
             webClient.post()
-                    .uri("/api/temporary-roles")
+                    .uri("/api/temporary-roles/internal")
                     .header("X-Internal-Api-Key", internalApiKey)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
         } catch (Exception e) {
-            throw new RuntimeException("Nije moguće automatski dodeliti privremenu ulogu: " + e.getMessage());
+            throw new RuntimeException("Nije moguce automatski dodeliti privremenu ulogu: " + e.getMessage());
         }
     }
 }
