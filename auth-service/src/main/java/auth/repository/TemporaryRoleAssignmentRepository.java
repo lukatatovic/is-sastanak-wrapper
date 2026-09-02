@@ -13,4 +13,6 @@ public interface TemporaryRoleAssignmentRepository extends JpaRepository<Tempora
     List<TemporaryRoleAssigment> findByUserIdAndRevokedFalse(Long userId);
 
     Optional<TemporaryRoleAssigment> findByUserIdAndMeetingIdAndRevokedFalse(Long userId, Long meetingId);
+
+    List<TemporaryRoleAssigment> findByMeetingIdAndRevokedFalse(Long meetingId);
 }

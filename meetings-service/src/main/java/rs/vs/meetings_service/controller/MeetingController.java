@@ -48,9 +48,13 @@ public class MeetingController {
 
     @PreAuthorize("@meetingSecurityService.canViewMeeting(authentication, #id)")
     @GetMapping("/{id}")
-    @Transactional(readOnly = true)
+    @Transactional
     public ResponseEntity<MeetingDetailDto> getOne(@PathVariable Long id){
-        return ResponseEntity.ok(meetingService.toDetailDto(meetingService.getOrThrow(id)));
+        Meeting meeting = meetingService.getOrThrow(id);
+
+        meetingService.syncTemporaryParticipants(meeting);
+
+        return ResponseEntity.ok(meetingService.toDetailDto(meeting));
     }
 
     @PreAuthorize("@meetingSecurityService.canManageMeeting(authentication, #id)")

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import rs.vs.meetings_service.exception.ResourceNotFoundReception;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -59,6 +61,21 @@ public class AuthServiceClient {
                     .block();
         } catch (Exception e) {
             throw new RuntimeException("Nije moguce automatski dodeliti privremenu ulogu: " + e.getMessage());
+        }
+    }
+
+    public List<Long> getTemporaryRoleUserIdsForMeeting(Long meetingId) {
+        try {
+            Long[] result = webClient.get()
+                    .uri("/api/temporary-roles/internal/by-meeting/{meetingId}", meetingId)
+                    .header("X-Internal-Api-Key", internalApiKey)
+                    .retrieve()
+                    .bodyToMono(Long[].class)
+                    .block();
+
+            return result != null ? Arrays.asList(result) : List.of();
+        } catch (Exception e) {
+            return List.of();
         }
     }
 }

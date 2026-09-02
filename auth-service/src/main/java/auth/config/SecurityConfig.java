@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/gui/login", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/api/temporary-roles/internal").permitAll()
+                        .requestMatchers("/api/temporary-roles/internal/**").permitAll()
                         .requestMatchers("/gui/**").hasRole("ADMINISTRATOR")
                         .anyRequest().authenticated()
                 )

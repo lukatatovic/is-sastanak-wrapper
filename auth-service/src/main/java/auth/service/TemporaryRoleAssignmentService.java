@@ -5,6 +5,7 @@ import auth.dto.TemporaryRoleAssignmentDto;
 import auth.dto.TemporaryRoleAssignmentRequest;
 import auth.exception.ResourceNotFoundReception;
 import auth.model.OrganizationalUnit;
+import auth.model.Role;
 import auth.model.TemporaryRoleAssigment;
 import auth.model.User;
 import auth.repository.OrganizationalUnitRepository;
@@ -173,5 +174,12 @@ public class TemporaryRoleAssignmentService {
         }
 
         return;
+    }
+
+    public List<Long> findUserIdsByMeeting(Long meetingId) {
+        return temporaryRoleAssignmentRepository.findByMeetingIdAndRevokedFalse(meetingId).stream()
+                .filter(TemporaryRoleAssigment::isActive)
+                .map(a -> a.getUser().getId())
+                .collect(Collectors.toList());
     }
 }

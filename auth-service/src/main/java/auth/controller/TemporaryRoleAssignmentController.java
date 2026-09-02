@@ -56,4 +56,14 @@ public class TemporaryRoleAssignmentController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @GetMapping("/internal/by-meeting/{meetingId}")
+    public ResponseEntity<List<Long>> byMeeting(
+            @PathVariable Long meetingId,
+            @RequestHeader("X-Internal-Api-Key") String apiKey) {
+        if (!internalApiKey.equals(apiKey)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(temporaryRoleAssignmentService.findUserIdsByMeeting(meetingId));
+    }
 }

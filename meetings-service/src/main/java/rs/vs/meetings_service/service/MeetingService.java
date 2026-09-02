@@ -146,6 +146,7 @@ public class MeetingService {
                 })
                 .collect(Collectors.toList());
 
+
         return new MeetingDetailDto(
                 meeting.getId(), meeting.getTitle(), meeting.getCategory(), meeting.getType(), meeting.getFrequency(),
                 meeting.getLocationType(), meeting.getRoom(), meeting.getScheduledDate(), meeting.getScheduledTime(), meeting.getStatus(),
@@ -285,5 +286,38 @@ public class MeetingService {
         meeting.setStatus(MeetingStatus.ODRZAN);
 
         return meetingRepository.save(meeting);
+    }
+
+    @Transactional
+    public void syncTemporaryParticipants(Meeting meeting) {
+
+        List<Long> participantsIds = meeting.getParticipants().stream()
+                .map(Participant::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<Long> temporaryAssigmentIds = new ArrayList<>(authServiceClient.getTemporaryRoleUserIdsForMeeting(meeting.getId()));
+        Long organizerId = meeting.getOrganizerId();
+        Long recorderId = meeting.getRecorderId();
+        temporaryAssigmentIds.add(organizerId);
+        temporaryAssigmentIds.add(recorderId);
+
+        temporaryAssigmentIds.stream()
+                .distinct()
+                .filter(id -> !participantsIds.contains(id))
+                .forEach(id -> {
+                    UserInfoDto uio = authServiceClient.getUser(id);
+
+                    Participant newParticipant = Participant.builder()
+                            .meeting(meeting)
+                            .userId(id)
+                            .plannedToAttend(true)
+                            .actuallyAttended(false)
+                            .build();
+                    participantRepository.save(newParticipant);
+
+                    meeting.getParticipants().add(newParticipant);
+                });
+
     }
 }
