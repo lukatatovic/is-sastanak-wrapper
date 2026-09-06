@@ -184,7 +184,7 @@ export default function MeetingDetailPage() {
         </div>
       </section>
 
-      {meeting.status === "ZAKAZAN" && (
+      {meeting.status === "ZAKAZAN" && isAdminOrRukovodilac && (
         <div className="flex gap-2">
           <button
             className="btn-secondary"
@@ -204,7 +204,7 @@ export default function MeetingDetailPage() {
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="mb-4 font-display text-lg text-ink">Dnevni red</h2>
-          {isAdminOrRukovodilac && (
+          {isAdminOrRukovodilacOrZapisnicar && (
             <button
               className="btn-primary"
               onClick={submitAgenda}
